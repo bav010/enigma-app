@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta http-equiv="Cache-Control" content="no-store" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#006600">
+<title>Энигма — Эмулятор</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #121212;
+    color: #eee;
+    padding: 20px;
+    user-select: none;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .controls {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    justify-content: center;
+  }
+  label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  select, input[type="text"] {
+    padding: 6px 8px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: none;
+    width: 100px;
+    text-align: center;
+    background: #222;
+    color: #eee;
+  }
+  #plugboard {
+    max-width: 600px;
+    margin: 10px auto 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    user-select: none;
+    position: relative;
+    z-index: 5;
+  }
+  .plug-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid #555;
+    background-color: #222;
+    color: #eee;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s, border-color 0.3s;
+    position: relative;
+    z-index: 5;
+  }
+  .plug-btn.selected {
+    background-color: #0f0;
+    border-color: #0f0;
+    color: #000;
+  }
+  .plug-btn.paired {
+    background-color: #008800;
+    border-color: #0f0;
+    color: #ccc;
+  }
+  #plugPairs {
+    text-align: center;
+    margin-top: 10px;
+    user-select: none;
+    font-weight: bold;
+    color: #0f0;
+  }
+  textarea {
+    width: 100%;
+    height: 120px;
+    margin-top: 15px;
+    font-size: 16px;
+    background: #222;
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: #eee;
+    padding: 10px;
+    resize: vertical;
+    font-family: monospace;
+  }
+  button {
+    padding: 8px 14px;
+    margin: 8px 4px 0 4px;
+    font-size: 16px;
+    background: #006600;
+    color: #eee;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+    user-select: none;
+  }
+  button:hover {
+    background: #009900;
+  }
+ #wiresSVG {
+  position: absolute; /* было fixed */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+  .config-buttons {
+    text-align: center;
+    margin-top: 10px;
+  }
+  body.light {
+  background: #f4f4f4;
+  color: #222;
+}
+body.light textarea,
+body.light select,
+body.light input[type="text"] {
+  background: #fff;
+  color: #000;
+  border-color: #ccc;
+}
+body.light .plug-btn {
+  background: #fff;
+  color: #000;
+  border-color: #888;
+}
+body.light .plug-btn.selected {
+  background-color: #ccffcc;
+  border-color: #0f0;
+  color: #000;
+}
+body.light .plug-btn.paired {
+  background-color: #99cc99;
+  color: #000;
+}
+body.light button {
+  background: #007700;
+  color: #fff;
+}
+body.light button:hover {
+  background: #00aa00;
+}
+#themeToggleBtn {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: #222;
+  color: #eee;
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: background 0.3s, color 0.3s;
+}
+#themeToggleBtn:hover {
+  background: #444;
+}
+body.light #themeToggleBtn {
+  background: #ddd;
+  color: #000;
+}
+body.light #themeToggleBtn:hover {
+  background: #bbb;
+}
+body.light button {
+  background: #0066cc;
+  color: #fff;
+}
+
+body.light button:hover {
+  background: #3399ff;
+}
+body.light {
+  color: #003366;
+}
+
+body.light .plug-btn {
+  border-color: #3399ff;
+}
+
+body.light .plug-btn.selected {
+  background-color: #ccf2ff;
+  border-color: #3399ff;
+  color: #003366;
+}
+
+body.light .plug-btn.paired {
+  background-color: #99ccff;
+  color: #003366;
+}
+
+body.light #plugPairs {
+  color: #0066cc;
+}
+
+body.light #wiresSVG line {
+  stroke: #0066cc !important;
+}
+.history-card {
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 12px auto;
+  max-width: 600px;
+  border: 1px solid;
+  transition: all 0.3s ease;
+}
+
+.history-button {
+  border: none;
+  padding: 6px 12px;
+  font-size: 0.9em;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Светлая тема */
+body.light .history-card {
+  background-color: #ffffff;
+  color: #0055cc;
+  border-color: #ccc;
+}
+
+body.light .history-button {
+  background-color: #0055cc;
+  color: white;
+}
+
+body.light .history-button:hover {
+  background-color: #003f99;
+}
+
+/* Тёмная тема */
+body.dark .history-card {
+  background-color: #1e1e1e;
+  color: #00aa00;
+  border-color: #00aa00;
+}
+
+body.dark .history-button {
+  background-color: #00aa00;
+  color: black;
+}
+
+body.dark .history-button:hover {
+  background-color: #00aa00;
+}
+.danger-button {
+  background-color: #006600;
+  color: white;
+}
+
+body.dark .danger-button {
+  background-color: #00aa00;
+  color: black;
+}
+
+.danger-button:hover {
+  background-color: #00aa00;
+}
+</style>
+</head>
+<body>
+  <button onclick="toggleTheme()">🌗 Переключить тему</button>
+<h1>Энигма — Эмулятор</h1>
+<div class="controls">
+  <div>
+    <label for="rotorL">Левый ротор</label>
+    <select id="rotorL">
+      <option value="I">I</option>
+      <option value="II">II</option>
+      <option value="III" selected>III</option>
+      <option value="IV">IV</option>
+      <option value="V">V</option>
+      <option value="VI">VI</option>
+      <option value="VII">VII</option>
+      <option value="VIII">VIII</option>
+    </select>
+    <input type="text" id="posL" maxlength="1" value="A" title="Позиция ротора (A-Z)" />
+  </div>
+  <div>
+    <label for="rotorM">Средний ротор</label>
+    <select id="rotorM">
+      <option value="I">I</option>
+      <option value="II" selected>II</option>
+      <option value="III">III</option>
+      <option value="IV">IV</option>
+      <option value="V">V</option>
+      <option value="VI">VI</option>
+      <option value="VII">VII</option>
+      <option value="VIII">VIII</option>
+    </select>
+    <input type="text" id="posM" maxlength="1" value="A" title="Позиция ротора (A-Z)" />
+  </div>
+  <div>
+    <label for="rotorR">Правый ротор</label>
+    <select id="rotorR">
+      <option value="I">I</option>
+      <option value="II">II</option>
+      <option value="III" selected>III</option>
+      <option value="IV">IV</option>
+      <option value="V">V</option>
+      <option value="VI">VI</option>
+      <option value="VII">VII</option>
+      <option value="VIII">VIII</option>
+    </select>
+    <input type="text" id="posR" maxlength="1" value="A" title="Позиция ротора (A-Z)" />
+  </div>
+  <div>
+    <label for="reflector">Отражатель</label>
+    <select id="reflector">
+      <option value="A">A</option>
+      <option value="B" selected>B</option>
+      <option value="C">C</option>
+    </select>
+  </div>
+</div>
+
+<div id="plugboard" title="Кликни по букве, чтобы выбрать и соединить пары"></div>
+<div id="plugPairs" title="Клик для удаления пары"></div>
+
+<svg id="wiresSVG"></svg>
+
+<textarea id="inputText" placeholder="Введите текст для шифровки..."></textarea>
+<textarea id="outputText" placeholder="Результат" readonly></textarea>
+
+<div style="text-align:center; margin-top:10px;">
+  <button onclick="encryptMessage()">Зашифровать / Расшифровать</button>
+</div>
+
+<div class="config-buttons">
+  <button onclick="saveConfigToFile()">Сохранить конфигурацию в файл</button>
+  <input type="file" id="loadFileInput" style="display:none" accept=".json" />
+  <button onclick="document.getElementById('loadFileInput').click()">Загрузить конфигурацию из файла</button>
+</div>
+<div style="margin-top: 20px; text-align:center;">
+  <button onclick="toggleHistory()">🕘 История (последние 5)</button>
+  <button onclick="clearHistory()" class="history-button danger-button">
+    🗑️ Очистить историю
+  </button>
+</div>
+<div id="historyContainer" style="display:none; margin-top:10px;"></div>
+<script>
+  if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(() =>
+    console.log("✅ Service Worker зарегистрирован")
+  )
+  };
+
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  const ROTORS = {
+    I:   { wiring: "EKMFLGDQVZNTOWYHXUSPAIBRCJ", notch: "Q" },
+    II:  { wiring: "AJDKSIRUXBLHWTMCQGZNPYFVOE", notch: "E" },
+    III: { wiring: "BDFHJLCPRTXVZNYEIWGAKMUSQO", notch: "V" },
+    IV:  { wiring: "ESOVPZJAYQUIRHXLNFTGKDCMWB", notch: "J" },
+    V:   { wiring: "VZBRGITYUPSDNHLXAWMJQOFECK", notch: "Z" },
+    VI:  { wiring: "JPGVOUMFYQBENHZRDKASXLICTW", notch: "Z" },
+    VII: { wiring: "NZJHGRCXMYSWBOUFAIVLPEKQDT", notch: "Z" },
+    VIII:{ wiring: "FKQHTLXOCBJSPDZRAMEWNIUYGV", notch: "Z" },
+  };
+
+  const REFLECTORS = {
+    A: "EJMZALYXVBWFCRQUONTSPIKHGD",
+    B: "YRUHQSLDPXNGOKMIEBFZCWVJAT",
+    C: "FVPJIAOYEDRZXWGCTKUQSBNMHL",
+  };
+
+  // Добавим инициализацию при загрузке страницы
+  window.onload = () => {
+    document.getElementById("rotorL").value = "I";
+    document.getElementById("rotorM").value = "II";
+    document.getElementById("rotorR").value = "III";
+    document.getElementById("reflector").value = "A";
+    document.getElementById("posL").value = "A";
+    document.getElementById("posM").value = "A";
+    document.getElementById("posR").value = "A";
+    initRotorSelectors();
+    initPlugboard();
+    drawPlugboardWires();
+  };
+
+  let rotors = [];
+  let rotorPositions = [0, 0, 0]; // L, M, R
+  let reflector = "";
+  let plugboardMap = {};
+  let selectedChar = null;
+  const maxPairs = 10;
+
+  const plugboardDiv = document.getElementById("plugboard");
+  const plugPairsDiv = document.getElementById("plugPairs");
+  const wiresSVG = document.getElementById("wiresSVG");
+
+  // Инициализация роторов и отражателя
+  function initRotorSelectors() {
+    const rotorL = document.getElementById("rotorL").value;
+    const rotorM = document.getElementById("rotorM").value;
+    const rotorR = document.getElementById("rotorR").value;
+    rotors = [
+      ROTORS[rotorL],
+      ROTORS[rotorM],
+      ROTORS[rotorR],
+    ];
+    reflector = REFLECTORS[document.getElementById("reflector").value];
+    setRotorPositions();
+  }
+
+  // Установка позиций роторов
+  function setRotorPositions() {
+    rotorPositions[0] = charToPos(document.getElementById("posL").value);
+    rotorPositions[1] = charToPos(document.getElementById("posM").value);
+    rotorPositions[2] = charToPos(document.getElementById("posR").value);
+  }
+
+  // Конвертация буквы в позицию 0-25
+  function charToPos(c) {
+    c = c.toUpperCase();
+    const pos = alphabet.indexOf(c);
+    return pos >= 0 ? pos : 0;
+  }
+  // Конвертация позиции 0-25 в букву
+  function posToChar(p) {
+    return alphabet[(p + 26) % 26];
+  }
+
+  // Проверка нажатия на notch ротора
+  function atNotch(rotorIndex) {
+    const rotor = rotors[rotorIndex];
+    const pos = rotorPositions[rotorIndex];
+    return posToChar(pos) === rotor.notch;
+  }
+
+  // Вращение роторов с учётом двойного шага
+  function stepRotors() {
+  const middleAtNotch = atNotch(1);
+  const rightAtNotch = atNotch(2);
+
+  // Правый ротор всегда вращается
+  rotorPositions[2] = (rotorPositions[2] + 1) % 26;
+
+  // Двойной шаг: средний ротор вращается сам и толкает левый, если он был на своём notch
+  if (rightAtNotch) {
+    rotorPositions[1] = (rotorPositions[1] + 1) % 26;
+  }
+
+  if (middleAtNotch) {
+    rotorPositions[1] = (rotorPositions[1] + 1) % 26;
+    rotorPositions[0] = (rotorPositions[0] + 1) % 26;
+  }
+}
+
+  // Проход символа через ротор (в одну сторону)
+  function rotorForward(rotorIndex, c) {
+    const pos = rotorPositions[rotorIndex];
+    const rotor = rotors[rotorIndex];
+    const index = (charToPos(c) + pos) % 26;
+    const wiredChar = rotor.wiring[index];
+    const output = posToChar(alphabet.indexOf(wiredChar) - pos);
+    return output;
+  }
+
+  // Проход символа через ротор (в обратную сторону)
+  function rotorBackward(rotorIndex, c) {
+    const pos = rotorPositions[rotorIndex];
+    const rotor = rotors[rotorIndex];
+    const index = (charToPos(c) + pos + 26) % 26;
+    const wiredIndex = rotor.wiring.indexOf(posToChar(index));
+    const output = posToChar(wiredIndex - pos);
+    return output;
+  }
+
+  // Применение отражателя
+  function applyReflector(c) {
+    return reflector[alphabet.indexOf(c)];
+  }
+
+  // Применение плагборда
+  function plugboardSwap(c) {
+    return plugboardMap[c] || c;
+  }
+
+  // Основная функция шифровки символа
+  function encryptChar(c) {
+    c = c.toUpperCase();
+    if (!alphabet.includes(c)) return c;
+
+    // Вращаем роторы
+    stepRotors();
+
+    // Плагборд вперед
+    let signal = plugboardSwap(c);
+
+    // Вращение вперёд через роторы справа налево
+    signal = rotorForward(2, signal);
+    signal = rotorForward(1, signal);
+    signal = rotorForward(0, signal);
+
+    // Отражатель
+    signal = applyReflector(signal);
+
+    // Вращение назад через роторы слева направо
+    signal = rotorBackward(0, signal);
+    signal = rotorBackward(1, signal);
+    signal = rotorBackward(2, signal);
+
+    // Плагборд назад
+    signal = plugboardSwap(signal);
+
+    return signal;
+  }
+
+  // Инициализация интерфейса плагборда
+  function initPlugboard() {
+    plugboardDiv.innerHTML = "";
+    for (let i = 0; i < alphabet.length; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = alphabet[i];
+      btn.className = "plug-btn";
+      btn.id = "plug-" + alphabet[i];
+      btn.onclick = () => plugboardClick(alphabet[i]);
+      plugboardDiv.appendChild(btn);
+    }
+    updatePlugboardUI();
+  }
+
+  // Обработка клика по букве плагборда
+  function plugboardClick(c) {
+  if (selectedChar === null) {
+    if (plugboardMap[c]) {
+      deletePair(c);
+    } else {
+      selectedChar = c;
+      updatePlugboardUI();
+    }
+  } else if (selectedChar === c) {
+    selectedChar = null;
+    updatePlugboardUI();
+  } else {
+    // 🚫 Проверка на самосоединение
+    if (selectedChar === c) {
+      alert("Нельзя соединить букву саму с собой.");
+      selectedChar = null;
+      updatePlugboardUI();
+      return;
+    }
+
+    if (Object.keys(plugboardMap).length / 2 >= maxPairs) {
+      alert("Достигнуто максимальное количество пар (10).");
+      selectedChar = null;
+      updatePlugboardUI();
+      return;
+    }
+
+    if (plugboardMap[c] || plugboardMap[selectedChar]) {
+      alert("Одна из букв уже занята в другой паре.");
+      selectedChar = null;
+      updatePlugboardUI();
+      return;
+    }
+
+    plugboardMap[selectedChar] = c;
+    plugboardMap[c] = selectedChar;
+    drawPlugboardWires();
+    selectedChar = null;
+    updatePlugboardUI();
+  }
+}
+
+  // Удаление пары по букве
+  function deletePair(c) {
+    if (!plugboardMap[c]) return;
+    const pairChar = plugboardMap[c];
+    delete plugboardMap[c];
+    delete plugboardMap[pairChar];
+    updatePlugboardUI();
+    drawPlugboardWires();
+  }
+
+  // Обновление UI плагборда (классы кнопок)
+  function updatePlugboardUI() {
+    for (let i = 0; i < alphabet.length; i++) {
+      const letter = alphabet[i];
+      const btn = document.getElementById("plug-" + letter);
+      btn.classList.remove("selected", "paired");
+      if (selectedChar === letter) btn.classList.add("selected");
+      else if (plugboardMap[letter]) btn.classList.add("paired");
+    }
+
+    // Показ пар
+    let pairsText = "";
+    let shown = new Set();
+    for (const k in plugboardMap) {
+      const v = plugboardMap[k];
+      if (!shown.has(k) && !shown.has(v)) {
+        pairsText += `${k}↔${v}  `;
+        shown.add(k);
+        shown.add(v);
+      }
+    }
+    plugPairsDiv.textContent = pairsText || "Пары не установлены";
+  }
+
+  // Функция шифровки/расшифровки текста
+ function encryptMessage(preview = false) {
+  initRotorSelectors();
+  setRotorPositions();
+
+  const savedPositions = [...rotorPositions]; // сохраняем начальные позиции
+  const input = document.getElementById("inputText").value.toUpperCase();
+  let output = "";
+
+  for (const ch of input) {
+    if (alphabet.includes(ch)) {
+      output += encryptChar(ch);
+    } else {
+      output += ch;
+    }
+  }
+
+  document.getElementById("outputText").value = output;
+
+  if (!preview) {
+    updateRotorPositionInputs(); // только если это не предпросмотр
+    saveToHistory(input, output);
+  } else {
+    rotorPositions = savedPositions; // восстановим позиции
+  }
+
+  drawPlugboardWires();
+}
+
+
+  // Обновление инпутов с текущими позициями роторов
+  function updateRotorPositionInputs() {
+    document.getElementById("posL").value = posToChar(rotorPositions[0]);
+    document.getElementById("posM").value = posToChar(rotorPositions[1]);
+    document.getElementById("posR").value = posToChar(rotorPositions[2]);
+  }
+
+  // Сохранение конфигурации в localStorage
+  function saveConfig() {
+    const config = {
+      rotorL: document.getElementById("rotorL").value,
+      rotorM: document.getElementById("rotorM").value,
+      rotorR: document.getElementById("rotorR").value,
+      posL: document.getElementById("posL").value.toUpperCase(),
+      posM: document.getElementById("posM").value.toUpperCase(),
+      posR: document.getElementById("posR").value.toUpperCase(),
+      reflector: document.getElementById("reflector").value,
+      plugboard: plugboardMap,
+    };
+    localStorage.setItem("enigmaConfig", JSON.stringify(config));
+    
+  }
+
+  // Загрузка конфигурации из localStorage
+  function loadConfig() {
+    const configRaw = localStorage.getItem("enigmaConfig");
+    if (!configRaw) {
+      alert("Конфигурация в localStorage не найдена.");
+      return;
+    }
+    try {
+      const config = JSON.parse(configRaw);
+      document.getElementById("rotorL").value = config.rotorL;
+      document.getElementById("rotorM").value = config.rotorM;
+      document.getElementById("rotorR").value = config.rotorR;
+      document.getElementById("posL").value = config.posL;
+      document.getElementById("posM").value = config.posM;
+      document.getElementById("posR").value = config.posR;
+      document.getElementById("reflector").value = config.reflector;
+      plugboardMap = config.plugboard || {};
+      initRotorSelectors();
+      updatePlugboardUI();
+      drawPlugboardWires();
+      alert("Конфигурация загружена.");
+    } catch(e) {
+      alert("Ошибка при загрузке конфигурации.");
+    }
+  }
+
+  // Сохранение конфигурации в файл JSON
+  function saveConfigToFile() {
+    const config = {
+      rotorL: document.getElementById("rotorL").value,
+      rotorM: document.getElementById("rotorM").value,
+      rotorR: document.getElementById("rotorR").value,
+      posL: document.getElementById("posL").value.toUpperCase(),
+      posM: document.getElementById("posM").value.toUpperCase(),
+      posR: document.getElementById("posR").value.toUpperCase(),
+      reflector: document.getElementById("reflector").value,
+      plugboard: plugboardMap,
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "enigma_config.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Загрузка конфигурации из файла JSON
+  document.getElementById("loadFileInput").addEventListener("change", function(event){
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const config = JSON.parse(e.target.result);
+        document.getElementById("rotorL").value = config.rotorL;
+        document.getElementById("rotorM").value = config.rotorM;
+        document.getElementById("rotorR").value = config.rotorR;
+        document.getElementById("posL").value = config.posL;
+        document.getElementById("posM").value = config.posM;
+        document.getElementById("posR").value = config.posR;
+        document.getElementById("reflector").value = config.reflector;
+        plugboardMap = config.plugboard || {};
+        initRotorSelectors();
+        updatePlugboardUI();
+        drawPlugboardWires();
+        alert("Конфигурация загружена из файла.");
+      } catch(e) {
+        alert("Ошибка при загрузке конфигурации из файла.");
+      }
+    };
+    reader.readAsText(file);
+    this.value = null;
+  });
+
+  // Рисуем линии плагборда (SVG)
+  function drawPlugboardWires() {
+    wiresSVG.innerHTML = "";
+    const letters = Object.keys(plugboardMap);
+    const drawn = new Set();
+
+    for (const a of letters) {
+      const b = plugboardMap[a];
+      if (drawn.has(a) || drawn.has(b)) continue;
+      const btnA = document.getElementById("plug-" + a);
+      const btnB = document.getElementById("plug-" + b);
+      if (!btnA || !btnB) continue;
+
+      const rectA = btnA.getBoundingClientRect();
+      const rectB = btnB.getBoundingClientRect();
+
+      const x1 = rectA.left + rectA.width / 2;
+      const y1 = rectA.top + rectA.height / 2;
+      const x2 = rectB.left + rectB.width / 2;
+      const y2 = rectB.top + rectB.height / 2;
+
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", x1);
+      line.setAttribute("y1", y1);
+      line.setAttribute("x2", x2);
+      line.setAttribute("y2", y2);
+      line.setAttribute("stroke", "#0f0");
+      line.setAttribute("stroke-width", "3");
+      line.setAttribute("stroke-linecap", "round");
+      wiresSVG.appendChild(line);
+
+      drawn.add(a);
+      drawn.add(b);
+    }
+  }
+
+  // Обработчики изменения конфигурации роторов/отражателя/позиций
+  document.getElementById("rotorL").addEventListener("change", () => {initRotorSelectors();});
+  document.getElementById("rotorM").addEventListener("change", () => {initRotorSelectors();});
+  document.getElementById("rotorR").addEventListener("change", () => {initRotorSelectors();});
+  document.getElementById("reflector").addEventListener("change", () => {initRotorSelectors();});
+  document.getElementById("posL").addEventListener("input", () => {
+    document.getElementById("posL").value = sanitizePositionInput(document.getElementById("posL").value);
+  });
+  document.getElementById("posM").addEventListener("input", () => {
+    document.getElementById("posM").value = sanitizePositionInput(document.getElementById("posM").value);
+  });
+  document.getElementById("posR").addEventListener("input", () => {
+    document.getElementById("posR").value = sanitizePositionInput(document.getElementById("posR").value);
+  });
+  document.getElementById("inputText").addEventListener("input", () => encryptMessage(true));
+
+  function sanitizePositionInput(val) {
+    val = val.toUpperCase();
+    if (val.length > 0 && alphabet.includes(val[0])) return val[0];
+    return "A";
+  }
+
+  // При загрузке страницы
+window.onload = () => {
+  const savedTheme = localStorage.getItem("enigmaTheme");
+if (savedTheme === "light") document.body.classList.add("light");
+  document.getElementById("rotorL").value = "I";
+  document.getElementById("rotorM").value = "II";
+  document.getElementById("rotorR").value = "III";
+  document.getElementById("reflector").value = "A";
+  document.getElementById("posL").value = "A";
+  document.getElementById("posM").value = "A";
+  document.getElementById("posR").value = "A";
+  initRotorSelectors();
+  initPlugboard();
+  drawPlugboardWires();
+};
+
+  // При ресайзе окна нужно перерисовывать линии плагборда
+  window.addEventListener("resize", drawPlugboardWires);
+
+  function toggleTheme() {
+  const isLight = document.body.classList.toggle("light");
+  localStorage.setItem("enigmaTheme", isLight ? "light" : "dark");
+}
+function saveToHistory(input, output) {
+  const now = new Date();
+  const time = now.toLocaleString();
+
+  const entry = {
+    input,
+    output,
+    time,
+    config: {
+      rotorL: document.getElementById("rotorL").value,
+      rotorM: document.getElementById("rotorM").value,
+      rotorR: document.getElementById("rotorR").value,
+      posL: document.getElementById("posL").value.toUpperCase(),
+      posM: document.getElementById("posM").value.toUpperCase(),
+      posR: document.getElementById("posR").value.toUpperCase(),
+      reflector: document.getElementById("reflector").value,
+      plugboard: {...plugboardMap}, // копия!
+    }
+  };
+
+  let history = JSON.parse(localStorage.getItem("enigmaHistory") || "[]");
+  history.unshift(entry);
+  if (history.length > 5) history = history.slice(0, 5);
+  localStorage.setItem("enigmaHistory", JSON.stringify(history));
+  renderHistory();
+}
+
+  history.unshift(entry);
+  if (history.length > 5) history.pop();
+
+  localStorage.setItem("enigmaHistory", JSON.stringify(history));
+
+function toggleHistory() {
+  const container = document.getElementById("historyContainer");
+  if (container.style.display === "none") {
+    renderHistory();
+    container.style.display = "block";
+  } else {
+    container.style.display = "none";
+  }
+}
+function renderHistory() {
+  const history = JSON.parse(localStorage.getItem("enigmaHistory") || "[]");
+  const container = document.getElementById("historyContainer");
+  container.innerHTML = "";
+
+  history.forEach((item, index) => {
+    const div = document.createElement("div");
+    div.className = "history-card"; // ← вот тут ключевое
+
+    div.innerHTML = `
+      <div style="font-size: 0.9em; opacity: 0.8; margin-bottom: 4px;">🕓 ${item.time}</div>
+      <div><strong>Вход:</strong> <code>${item.input}</code></div>
+      <div><strong>Выход:</strong> <code>${item.output}</code></div>
+      <div style="text-align:right; margin-top: 8px;">
+        <button class="history-button" onclick='loadFromHistory(${index})'>
+          ⏪ Загрузить настройки
+        </button>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+}
+function loadFromHistory(index) {
+  const history = JSON.parse(localStorage.getItem("enigmaHistory") || "[]");
+  if (!history[index]) return;
+  loadConfig(history[index].config);
+}
+function clearHistory() {
+  localStorage.removeItem("enigmaHistory");
+  renderHistory(); // обновим UI
+}
+</script>
+</body>
+</html>
