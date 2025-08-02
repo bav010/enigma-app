@@ -904,6 +904,7 @@ function clearHistory() {
   localStorage.removeItem("enigmaHistory");
   renderHistory(); // обновим UI
 }
+window.addEventListener("scroll", drawPlugboardWires);
 </script>
 </body>
 </html>
