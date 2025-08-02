@@ -365,6 +365,7 @@ body.dark .danger-button {
   </button>
 </div>
 <div id="historyContainer" style="display:none; margin-top:10px;"></div>
+<button id="updateAppBtn" style="display:none;">Обновить версию</button>
 <script>
   if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').then(() =>
@@ -909,9 +910,24 @@ function clearHistory() {
   renderHistory(); // обновим UI
 }
 window.addEventListener("scroll", drawPlugboardWires);
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistration().then(reg => {
+    if (reg && reg.waiting) {
+      // Показать кнопку
+      const btn = document.getElementById('updateAppBtn');
+      btn.style.display = 'inline-block';
+
+      // При нажатии — активировать новую версию
+      btn.addEventListener('click', () => {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        window.location.reload();
+      });
+    }
+  });
+}
 </script>
 <script>
-  const version = "v5"; // Меняй при каждом обновлении
+  const version = "v6"; // Меняй при каждом обновлении
 
   if (localStorage.getItem("pageVersion") !== version) {
     localStorage.setItem("pageVersion", version);
