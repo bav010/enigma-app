@@ -286,6 +286,9 @@ body.dark .danger-button {
 </style>
 </head>
 <body>
+  <button id="updateBtn" style="display:none; position: fixed; bottom: 10px; right: 10px; z-index: 1000;">
+  🔄 Обновить версию
+</button>
   <button onclick="toggleTheme()">🌗 Переключить тему</button>
 <h1>Энигма — Эмулятор</h1>
 <div class="controls">
@@ -927,7 +930,31 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 <script>
-  const version = "v6"; // Меняй при каждом обновлении
+  let newWorker;
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            document.getElementById('updateBtn').style.display = 'block';
+          }
+        });
+      });
+    });
+
+    document.getElementById('updateBtn').addEventListener('click', () => {
+      newWorker.postMessage({ type: 'SKIP_WAITING' });
+    });
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  }
+</script>
+<script>
+  const version = "v7"; // Меняй при каждом обновлении
 
   if (localStorage.getItem("pageVersion") !== version) {
     localStorage.setItem("pageVersion", version);
