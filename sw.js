@@ -1,4 +1,4 @@
-const CACHE_NAME = "enigma-v8"; // меняй на v3, v4 и т.д. при обновлении
+const CACHE_NAME = "enigma-v9"; // меняй на v3, v4 и т.д. при обновлении
 
 const ASSETS = [
   "./",
